@@ -1,0 +1,63 @@
+const mongoose = require('mongoose');
+
+const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  planId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Plan',
+    required: true
+  },
+  planName: {
+    type: String,
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  utrNumber: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  notes: {
+    type: String,
+    default: ''
+  }
+}, {
+  timestamps: true
+});
+
+// Generate unique order ID before saving
+orderSchema.pre('save', function(next) {
+  if (!this.orderId) {
+    this.orderId = 'ORD' + Date.now().toString().slice(-8);
+  }
+  next();
+});
+
+module.exports = mongoose.model('Order', orderSchema);

@@ -1,0 +1,42 @@
+{
+  "settings": {
+    "upiId": "example@upi",
+    "upiName": "Dream11 Tips",
+    "telegramLink": "https://t.me/dream11tips",
+    "whatsappNumber": "+917041508202",
+    "contactNumber": "+917041508202"
+  },
+  "plans": [
+    {
+      "id": "1",
+      "name": "Grand League",
+      "price": 499,
+      "period": "/match",
+      "description": "Expert GL tips",
+      "features": ["Captain Picks", "Detailed Analysis", "24/7 Support"],
+      "popular": false,
+      "active": true
+    },
+    {
+      "id": "2",
+      "name": "Premium",
+      "price": 2999,
+      "period": "/month",
+      "description": "All matches covered",
+      "features": ["All Matches", "GL + SL Teams", "WhatsApp Group", "Priority Support"],
+      "popular": true,
+      "active": true
+    },
+    {
+      "id": "3",
+      "name": "Small League",
+      "price": 299,
+      "period": "/match",
+      "description": "Safe SL teams",
+      "features": ["Multiple Teams", "Safe Picks", "Live Updates"],
+      "popular": false,
+      "active": true
+    }
+  ],
+  "orders": []
+}
