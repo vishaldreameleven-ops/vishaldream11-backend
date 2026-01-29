@@ -2,37 +2,80 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const Order = require('../models/Order');
 const Plan = require('../models/Plan');
+const Settings = require('../models/Settings');
+const emailService = require('../services/emailService');
+const pdfService = require('../services/pdfService');
 
 const router = express.Router();
 
 // Create order (public - user submits payment)
 router.post('/', async (req, res) => {
   try {
-    const { planId, name, phone, email, utrNumber } = req.body;
+    const { planId, planName, amount, name, phone, email, utrNumber } = req.body;
 
     // Validate required fields
     if (!planId || !name || !phone || !utrNumber) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: 'Please fill all required fields' });
     }
 
-    const plan = await Plan.findById(planId);
+    if (!planName || !amount) {
+      return res.status(400).json({ message: 'Invalid plan details' });
+    }
 
-    if (!plan) {
-      return res.status(404).json({ message: 'Plan not found' });
+    // Check if UTR already exists
+    const existingOrder = await Order.findOne({ utrNumber: utrNumber.trim() });
+    if (existingOrder) {
+      return res.status(409).json({ message: 'This UTR number has already been used. Please check your payment details.' });
+    }
+
+    // Validate phone number
+    if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+      return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
+    }
+
+    // Validate UTR length
+    if (utrNumber.trim().length < 10) {
+      return res.status(400).json({ message: 'Please enter a valid UTR/Transaction ID' });
+    }
+
+    // Try to get the plan, but don't fail if not found (use sent data)
+    let finalPlanName = planName;
+    let finalAmount = amount;
+    let finalPlanId = planId;
+
+    try {
+      const plan = await Plan.findById(planId);
+      if (plan) {
+        finalPlanId = plan._id;
+        // Use sent planName and amount (they include discount calculation from frontend)
+      }
+    } catch (planError) {
+      // If planId is not a valid ObjectId, just use the sent data
+      console.log('Plan lookup skipped:', planError.message);
     }
 
     const order = new Order({
-      planId: plan._id,
-      planName: plan.name,
-      amount: plan.price,
-      name,
-      phone,
-      email: email || '',
-      utrNumber,
+      planId: finalPlanId,
+      planName: finalPlanName,
+      amount: finalAmount,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email ? email.trim() : '',
+      utrNumber: utrNumber.trim().toUpperCase(),
       status: 'pending'
     });
 
     await order.save();
+
+    // Send order confirmation email (non-blocking)
+    try {
+      const settings = await Settings.getSettings();
+      emailService.sendOrderPlacedEmail(order, settings).catch(err => {
+        console.log('Order placed email failed:', err.message);
+      });
+    } catch (emailErr) {
+      console.log('Email service error:', emailErr.message);
+    }
 
     res.status(201).json({
       message: 'Order submitted successfully! We will verify your payment shortly.',
@@ -44,7 +87,14 @@ router.post('/', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Order creation error:', error);
+
+    // Handle duplicate key error (if UTR check somehow fails)
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'This payment has already been submitted' });
+    }
+
+    res.status(500).json({ message: 'Unable to submit order. Please try again.', error: error.message });
   }
 });
 
@@ -125,6 +175,15 @@ router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { status, notes } = req.body;
 
+    // Get the current order to check if status is changing to approved
+    const currentOrder = await Order.findById(req.params.id);
+    if (!currentOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const wasNotApproved = currentOrder.status !== 'approved';
+    const willBeApproved = status === 'approved';
+
     const updateData = {};
     if (status) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
@@ -135,8 +194,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
       { new: true }
     );
 
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+    // Send approval email with PDF if status changed to approved
+    if (wasNotApproved && willBeApproved && order.email) {
+      try {
+        const settings = await Settings.getSettings();
+        const pdfBuffer = await pdfService.generateGuaranteeCertificate(order, settings);
+        emailService.sendOrderApprovedEmail(order, pdfBuffer, settings).catch(err => {
+          console.log('Approval email failed:', err.message);
+        });
+      } catch (emailErr) {
+        console.log('Email/PDF service error:', emailErr.message);
+      }
     }
 
     res.json({

@@ -97,6 +97,22 @@ router.put('/settings', authMiddleware, async (req, res) => {
   }
 });
 
+// Get public settings (PUBLIC - no auth required for homepage)
+router.get('/public-settings', async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    res.json({
+      whatsappNumber: settings.whatsappNumber || '+917041508202',
+      contactNumber: settings.contactNumber || '+917041508202',
+      telegramLink: settings.telegramLink || 'https://t.me/dream11tips',
+      upiId: settings.upiId || '',
+      upiName: settings.upiName || ''
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get featured match (PUBLIC - no auth required for homepage)
 router.get('/featured-match', async (req, res) => {
   try {

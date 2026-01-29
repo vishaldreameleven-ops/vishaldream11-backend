@@ -81,7 +81,8 @@ router.get('/:id', async (req, res) => {
         discountLabel: plan.discountLabel || ''
       },
       upiId: settings.upiId,
-      upiName: settings.upiName
+      upiName: settings.upiName,
+      whatsappNumber: settings.whatsappNumber || '+917041508202'
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -3,8 +3,10 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
   orderId: {
     type: String,
-    required: true,
-    unique: true
+    unique: true,
+    default: function() {
+      return 'ORD' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
+    }
   },
   planId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -37,11 +39,12 @@ const orderSchema = new mongoose.Schema({
   utrNumber: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    uppercase: true
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['pending', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
   notes: {
@@ -52,12 +55,6 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate unique order ID before saving
-orderSchema.pre('save', function(next) {
-  if (!this.orderId) {
-    this.orderId = 'ORD' + Date.now().toString().slice(-8);
-  }
-  next();
-});
+// No need for pre-save hook - orderId is auto-generated via default
 
 module.exports = mongoose.model('Order', orderSchema);

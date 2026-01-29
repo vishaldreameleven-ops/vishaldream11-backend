@@ -35,6 +35,13 @@ const settingsSchema = new mongoose.Schema({
     venue: { type: String, default: 'Wankhede Stadium' },
     tournament: { type: String, default: 'IPL 2026' },
     isLive: { type: Boolean, default: false }
+  },
+  // Email configuration
+  emailSettings: {
+    enabled: { type: Boolean, default: false },
+    emailUser: { type: String, default: '' },
+    emailAppPassword: { type: String, default: '' },
+    emailFromName: { type: String, default: 'Dream 11 Office' }
   }
 }, {
   timestamps: true
