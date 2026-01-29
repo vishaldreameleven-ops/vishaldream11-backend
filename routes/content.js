@@ -209,33 +209,7 @@ router.delete('/winners/:id', authMiddleware, async (req, res) => {
 
 router.post('/init', authMiddleware, async (req, res) => {
   try {
-    // Add default video proofs if none exist
-    const videoCount = await VideoProof.countDocuments();
-    if (videoCount === 0) {
-      await VideoProof.insertMany([
-        {
-          title: 'IPL Grand League Win',
-          amount: '₹2.5L',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          date: 'Jan 2026',
-          order: 1
-        },
-        {
-          title: 'T20 WC Mega Win',
-          amount: '₹5L',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          date: 'Dec 2025',
-          order: 2
-        },
-        {
-          title: 'PSL Winner',
-          amount: '₹1.8L',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          date: 'Feb 2026',
-          order: 3
-        }
-      ]);
-    }
+    // No default videos - admin will add them manually
 
     // Add default winners if none exist
     const winnerCount = await Winner.countDocuments();

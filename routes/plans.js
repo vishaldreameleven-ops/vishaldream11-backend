@@ -20,7 +20,9 @@ router.get('/', async (req, res) => {
       features: plan.features,
       imageUrl: plan.imageUrl || '',
       popular: plan.popular,
-      active: plan.active
+      active: plan.active,
+      discount: plan.discount || 0,
+      discountLabel: plan.discountLabel || ''
     }));
 
     res.json(transformedPlans);
@@ -43,7 +45,9 @@ router.get('/all', authMiddleware, async (req, res) => {
       features: plan.features,
       imageUrl: plan.imageUrl || '',
       popular: plan.popular,
-      active: plan.active
+      active: plan.active,
+      discount: plan.discount || 0,
+      discountLabel: plan.discountLabel || ''
     }));
 
     res.json(transformedPlans);
@@ -72,7 +76,9 @@ router.get('/:id', async (req, res) => {
         description: plan.description,
         features: plan.features,
         imageUrl: plan.imageUrl || '',
-        popular: plan.popular
+        popular: plan.popular,
+        discount: plan.discount || 0,
+        discountLabel: plan.discountLabel || ''
       },
       upiId: settings.upiId,
       upiName: settings.upiName

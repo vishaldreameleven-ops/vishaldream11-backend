@@ -97,6 +97,43 @@ router.put('/settings', authMiddleware, async (req, res) => {
   }
 });
 
+// Get featured match (PUBLIC - no auth required for homepage)
+router.get('/featured-match', async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    res.json(settings.featuredMatch || {
+      team1Name: 'Mumbai',
+      team1Short: 'MI',
+      team1Color: '#004BA0',
+      team2Name: 'Chennai',
+      team2Short: 'CSK',
+      team2Color: '#F9CD05',
+      matchTime: 'Today 7:30 PM',
+      venue: 'Wankhede Stadium',
+      tournament: 'IPL 2026',
+      isLive: false
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update featured match (admin only)
+router.put('/featured-match', authMiddleware, async (req, res) => {
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings({ featuredMatch: req.body });
+    } else {
+      settings.featuredMatch = req.body;
+    }
+    await settings.save();
+    res.json({ message: 'Featured match updated', featuredMatch: settings.featuredMatch });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Initialize default data (run once)
 router.post('/init', authMiddleware, async (req, res) => {
   try {

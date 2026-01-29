@@ -9,7 +9,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 15 * 1024 * 1024, // 15MB limit (increased for high-res images)
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -112,8 +112,8 @@ router.post('/plan', authMiddleware, upload.single('image'), async (req, res) =>
           folder: 'dream11tips/plans',
           resource_type: 'image',
           transformation: [
-            { width: 400, height: 300, crop: 'fill' },
-            { quality: 'auto' },
+            { width: 800, crop: 'limit' }, // Preserve aspect ratio, limit max width
+            { quality: 'auto:good' },
             { fetch_format: 'auto' }
           ]
         },

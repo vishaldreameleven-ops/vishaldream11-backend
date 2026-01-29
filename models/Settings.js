@@ -22,6 +22,19 @@ const settingsSchema = new mongoose.Schema({
   contactNumber: {
     type: String,
     default: '+917041508202'
+  },
+  // Featured match for homepage - synced from admin dashboard
+  featuredMatch: {
+    team1Name: { type: String, default: 'Mumbai' },
+    team1Short: { type: String, default: 'MI' },
+    team1Color: { type: String, default: '#004BA0' },
+    team2Name: { type: String, default: 'Chennai' },
+    team2Short: { type: String, default: 'CSK' },
+    team2Color: { type: String, default: '#F9CD05' },
+    matchTime: { type: String, default: 'Today 7:30 PM' },
+    venue: { type: String, default: 'Wankhede Stadium' },
+    tournament: { type: String, default: 'IPL 2026' },
+    isLive: { type: Boolean, default: false }
   }
 }, {
   timestamps: true
