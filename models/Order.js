@@ -11,7 +11,17 @@ const orderSchema = new mongoose.Schema({
   planId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Plan',
-    required: true
+    required: false
+  },
+  rankId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Rank',
+    required: false
+  },
+  itemType: {
+    type: String,
+    enum: ['plan', 'rank'],
+    default: 'plan'
   },
   planName: {
     type: String,

@@ -11,16 +11,37 @@ const router = express.Router();
 // Create order (public - user submits payment)
 router.post('/', async (req, res) => {
   try {
-    const { planId, planName, amount, name, phone, email, utrNumber } = req.body;
+    console.log('=== ORDER REQUEST ===');
+    console.log('Raw body:', JSON.stringify(req.body));
 
-    // Validate required fields
-    if (!planId || !name || !phone || !utrNumber) {
-      return res.status(400).json({ message: 'Please fill all required fields' });
+    const { planId, rankId, itemType, planName, amount, name, phone, email, utrNumber } = req.body;
+
+    console.log('Parsed fields:', { planId, rankId, itemType, planName, amount, name, phone, utrNumber });
+
+    // Validate required fields with specific error messages
+    if (!planId && !rankId) {
+      console.log('VALIDATION FAILED: No planId or rankId');
+      return res.status(400).json({ message: 'Order type (plan or rank) is required' });
+    }
+    if (!name || !name.trim()) {
+      console.log('VALIDATION FAILED: No name');
+      return res.status(400).json({ message: 'Please enter your full name' });
+    }
+    if (!phone || !phone.trim()) {
+      console.log('VALIDATION FAILED: No phone');
+      return res.status(400).json({ message: 'Please enter your WhatsApp number' });
+    }
+    if (!utrNumber || !utrNumber.trim()) {
+      console.log('VALIDATION FAILED: No utrNumber');
+      return res.status(400).json({ message: 'Please enter UTR/Transaction ID' });
     }
 
     if (!planName || !amount) {
-      return res.status(400).json({ message: 'Invalid plan details' });
+      console.log('VALIDATION FAILED: No planName or amount', { planName, amount });
+      return res.status(400).json({ message: 'Invalid item details. Please refresh and try again.' });
     }
+
+    console.log('All validations passed!');
 
     // Check if UTR already exists
     const existingOrder = await Order.findOne({ utrNumber: utrNumber.trim() });
@@ -38,24 +59,44 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid UTR/Transaction ID' });
     }
 
-    // Try to get the plan, but don't fail if not found (use sent data)
+    // Try to get the plan or rank, but don't fail if not found (use sent data)
     let finalPlanName = planName;
     let finalAmount = amount;
-    let finalPlanId = planId;
+    let finalPlanId = planId || null;
+    let finalRankId = rankId || null;
+    let finalItemType = itemType || 'plan';
 
-    try {
-      const plan = await Plan.findById(planId);
-      if (plan) {
-        finalPlanId = plan._id;
-        // Use sent planName and amount (they include discount calculation from frontend)
+    // Handle Rank orders
+    if (itemType === 'rank' && rankId) {
+      try {
+        const Rank = require('../models/Rank');
+        const rank = await Rank.findById(rankId);
+        if (rank) {
+          finalRankId = rank._id;
+          finalPlanName = rank.name;
+          finalAmount = rank.discountedPrice;
+        }
+      } catch (rankError) {
+        console.log('Rank lookup skipped:', rankError.message);
       }
-    } catch (planError) {
-      // If planId is not a valid ObjectId, just use the sent data
-      console.log('Plan lookup skipped:', planError.message);
+    }
+    // Handle Plan orders
+    else if (planId) {
+      try {
+        const plan = await Plan.findById(planId);
+        if (plan) {
+          finalPlanId = plan._id;
+          // Use sent planName and amount (they include discount calculation from frontend)
+        }
+      } catch (planError) {
+        console.log('Plan lookup skipped:', planError.message);
+      }
     }
 
     const order = new Order({
       planId: finalPlanId,
+      rankId: finalRankId,
+      itemType: finalItemType,
       planName: finalPlanName,
       amount: finalAmount,
       name: name.trim(),
@@ -117,7 +158,9 @@ router.get('/', authMiddleware, async (req, res) => {
     const transformedOrders = orders.map(order => ({
       id: order._id.toString(),
       orderId: order.orderId,
-      planId: order.planId.toString(),
+      planId: order.planId ? order.planId.toString() : null,
+      rankId: order.rankId ? order.rankId.toString() : null,
+      itemType: order.itemType || 'plan',
       planName: order.planName,
       amount: order.amount,
       name: order.name,
@@ -153,7 +196,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
     res.json({
       id: order._id.toString(),
       orderId: order.orderId,
-      planId: order.planId.toString(),
+      planId: order.planId ? order.planId.toString() : null,
+      rankId: order.rankId ? order.rankId.toString() : null,
+      itemType: order.itemType || 'plan',
       planName: order.planName,
       amount: order.amount,
       name: order.name,

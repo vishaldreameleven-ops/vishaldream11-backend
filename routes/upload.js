@@ -173,6 +173,43 @@ router.post('/proof', authMiddleware, upload.single('image'), async (req, res) =
   }
 });
 
+// Upload rank promo image (1:1 aspect ratio)
+router.post('/rank-promo', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'dream11tips/rank-promo',
+          resource_type: 'image',
+          transformation: [
+            { width: 800, height: 800, crop: 'fill' }, // Force 1:1 aspect ratio
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({
+      message: 'Rank promo image uploaded successfully',
+      url: result.secure_url,
+      publicId: result.public_id
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ message: 'Upload failed', error: error.message });
+  }
+});
+
 // Delete image (admin only)
 router.delete('/:publicId', authMiddleware, async (req, res) => {
   try {

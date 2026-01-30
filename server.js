@@ -5,6 +5,7 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const adminRoutes = require('./routes/admin');
 const plansRoutes = require('./routes/plans');
+const ranksRoutes = require('./routes/ranks');
 const ordersRoutes = require('./routes/orders');
 const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/plans', plansRoutes);
+app.use('/api/ranks', ranksRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/upload', uploadRoutes);

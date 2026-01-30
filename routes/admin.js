@@ -39,34 +39,85 @@ router.get('/verify', authMiddleware, (req, res) => {
   res.json({ valid: true, admin: req.admin });
 });
 
-// Get dashboard stats
+// Get dashboard stats with date filtering
 router.get('/dashboard', authMiddleware, async (req, res) => {
   try {
-    const totalOrders = await Order.countDocuments();
-    const pendingOrders = await Order.countDocuments({ status: 'pending' });
-    const approvedOrders = await Order.countDocuments({ status: 'approved' });
-    const rejectedOrders = await Order.countDocuments({ status: 'rejected' });
+    const { range = 'all' } = req.query;
 
+    // Calculate date range
+    let dateFilter = {};
+    const now = new Date();
+
+    if (range !== 'all') {
+      let startDate;
+      switch (range) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'lastMonth':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+          dateFilter = { createdAt: { $gte: startDate, $lte: endOfLastMonth } };
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        case 'lastYear':
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+          dateFilter = { createdAt: { $gte: startDate, $lte: endOfLastYear } };
+          break;
+        default:
+          startDate = null;
+      }
+
+      if (startDate && !dateFilter.createdAt) {
+        dateFilter = { createdAt: { $gte: startDate } };
+      }
+    }
+
+    const totalOrders = await Order.countDocuments(dateFilter);
+    const pendingOrders = await Order.countDocuments({ ...dateFilter, status: 'pending' });
+    const approvedOrders = await Order.countDocuments({ ...dateFilter, status: 'approved' });
+    const rejectedOrders = await Order.countDocuments({ ...dateFilter, status: 'rejected' });
+    const completedOrders = await Order.countDocuments({ ...dateFilter, status: 'completed' });
+
+    // Calculate revenue from approved and completed orders
     const revenueResult = await Order.aggregate([
-      { $match: { status: 'approved' } },
+      { $match: { ...dateFilter, status: { $in: ['approved', 'completed'] } } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     const totalRevenue = revenueResult[0]?.total || 0;
 
-    const recentOrders = await Order.find()
+    const recentOrders = await Order.find(dateFilter)
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
+
+    // Get stats breakdown by item type
+    const rankOrders = await Order.countDocuments({ ...dateFilter, itemType: 'rank' });
+    const planOrders = await Order.countDocuments({ ...dateFilter, itemType: 'plan' });
 
     res.json({
       totalOrders,
       pendingOrders,
       approvedOrders,
       rejectedOrders,
+      completedOrders,
       totalRevenue,
-      recentOrders
+      recentOrders,
+      rankOrders,
+      planOrders,
+      dateRange: range
     });
   } catch (error) {
+    console.error('Dashboard stats error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -145,6 +196,34 @@ router.put('/featured-match', authMiddleware, async (req, res) => {
     }
     await settings.save();
     res.json({ message: 'Featured match updated', featuredMatch: settings.featuredMatch });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get rank promo image (PUBLIC - no auth required for homepage)
+router.get('/rank-promo-image', async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    res.json({
+      rankPromoImage: settings.rankPromoImage || ''
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update rank promo image (admin only)
+router.put('/rank-promo-image', authMiddleware, async (req, res) => {
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings({ rankPromoImage: req.body.rankPromoImage });
+    } else {
+      settings.rankPromoImage = req.body.rankPromoImage;
+    }
+    await settings.save();
+    res.json({ message: 'Rank promo image updated', rankPromoImage: settings.rankPromoImage });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

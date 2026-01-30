@@ -42,6 +42,11 @@ const settingsSchema = new mongoose.Schema({
     emailUser: { type: String, default: '' },
     emailAppPassword: { type: String, default: '' },
     emailFromName: { type: String, default: 'Dream 11 Office' }
+  },
+  // Rank booking promo image (1:1 aspect ratio)
+  rankPromoImage: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true
