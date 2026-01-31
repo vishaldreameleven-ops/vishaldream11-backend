@@ -2,6 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const VideoProof = require('../models/VideoProof');
 const Winner = require('../models/Winner');
+const cloudinaryService = require('../services/cloudinaryService');
 
 const router = express.Router();
 
@@ -74,14 +75,30 @@ router.post('/videos', authMiddleware, async (req, res) => {
 // Update video proof (admin)
 router.put('/videos/:id', authMiddleware, async (req, res) => {
   try {
+    const oldVideo = await VideoProof.findById(req.params.id);
+
+    if (!oldVideo) {
+      return res.status(404).json({ message: 'Video proof not found' });
+    }
+
+    const thumbnailChanged = req.body.thumbnailUrl &&
+                             req.body.thumbnailUrl !== oldVideo.thumbnailUrl &&
+                             oldVideo.thumbnailUrl;
+
     const video = await VideoProof.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
 
-    if (!video) {
-      return res.status(404).json({ message: 'Video proof not found' });
+    if (thumbnailChanged) {
+      cloudinaryService.deleteModelImage(
+        oldVideo,
+        'thumbnailUrl',
+        'thumbnailPublicId'
+      ).catch(err => {
+        console.error(`Failed to delete old thumbnail for video ${req.params.id}:`, err);
+      });
     }
 
     res.json({ message: 'Video proof updated', video });
@@ -93,10 +110,22 @@ router.put('/videos/:id', authMiddleware, async (req, res) => {
 // Delete video proof (admin)
 router.delete('/videos/:id', authMiddleware, async (req, res) => {
   try {
-    const video = await VideoProof.findByIdAndDelete(req.params.id);
+    const video = await VideoProof.findById(req.params.id);
 
     if (!video) {
       return res.status(404).json({ message: 'Video proof not found' });
+    }
+
+    await VideoProof.findByIdAndDelete(req.params.id);
+
+    if (video.thumbnailUrl) {
+      cloudinaryService.deleteModelImage(
+        video,
+        'thumbnailUrl',
+        'thumbnailPublicId'
+      ).catch(err => {
+        console.error(`Failed to delete thumbnail for video ${req.params.id}:`, err);
+      });
     }
 
     res.json({ message: 'Video proof deleted' });
@@ -174,14 +203,30 @@ router.post('/winners', authMiddleware, async (req, res) => {
 // Update winner (admin)
 router.put('/winners/:id', authMiddleware, async (req, res) => {
   try {
+    const oldWinner = await Winner.findById(req.params.id);
+
+    if (!oldWinner) {
+      return res.status(404).json({ message: 'Winner not found' });
+    }
+
+    const imageChanged = req.body.imageUrl &&
+                         req.body.imageUrl !== oldWinner.imageUrl &&
+                         oldWinner.imageUrl;
+
     const winner = await Winner.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
 
-    if (!winner) {
-      return res.status(404).json({ message: 'Winner not found' });
+    if (imageChanged) {
+      cloudinaryService.deleteModelImage(
+        oldWinner,
+        'imageUrl',
+        'imagePublicId'
+      ).catch(err => {
+        console.error(`Failed to delete old image for winner ${req.params.id}:`, err);
+      });
     }
 
     res.json({ message: 'Winner updated', winner });
@@ -193,10 +238,22 @@ router.put('/winners/:id', authMiddleware, async (req, res) => {
 // Delete winner (admin)
 router.delete('/winners/:id', authMiddleware, async (req, res) => {
   try {
-    const winner = await Winner.findByIdAndDelete(req.params.id);
+    const winner = await Winner.findById(req.params.id);
 
     if (!winner) {
       return res.status(404).json({ message: 'Winner not found' });
+    }
+
+    await Winner.findByIdAndDelete(req.params.id);
+
+    if (winner.imageUrl) {
+      cloudinaryService.deleteModelImage(
+        winner,
+        'imageUrl',
+        'imagePublicId'
+      ).catch(err => {
+        console.error(`Failed to delete image for winner ${req.params.id}:`, err);
+      });
     }
 
     res.json({ message: 'Winner deleted' });

@@ -23,6 +23,10 @@ const winnerSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  imagePublicId: {
+    type: String,
+    default: ''
+  },
   active: {
     type: Boolean,
     default: true

@@ -14,7 +14,7 @@ const orderPlacedTemplate = (order, settings) => {
     <!-- Header -->
     <tr>
       <td style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Dream 11 Office</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Come Office</h1>
       </td>
     </tr>
 
@@ -88,7 +88,7 @@ const orderPlacedTemplate = (order, settings) => {
     <tr>
       <td style="background-color: #333333; padding: 25px; text-align: center;">
         <p style="color: #999999; font-size: 12px; margin: 0;">
-          Dream 11 Office | Mumbai, India<br>
+          Come Office | Mumbai, India<br>
           This is an automated email. Please do not reply.
         </p>
       </td>

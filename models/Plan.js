@@ -26,6 +26,10 @@ const planSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  imagePublicId: {
+    type: String,
+    default: ''
+  },
   popular: {
     type: Boolean,
     default: false

@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/auth');
 const Settings = require('../models/Settings');
 const Order = require('../models/Order');
 const Plan = require('../models/Plan');
+const cloudinaryService = require('../services/cloudinaryService');
 
 const router = express.Router();
 
@@ -217,13 +218,37 @@ router.get('/rank-promo-image', async (req, res) => {
 router.put('/rank-promo-image', authMiddleware, async (req, res) => {
   try {
     let settings = await Settings.findOne();
+
+    // Track old image for cleanup
+    const oldImageUrl = settings?.rankPromoImage || null;
+    const oldPublicId = settings?.rankPromoImagePublicId || null;
+    const imageChanged = req.body.rankPromoImage &&
+                         req.body.rankPromoImage !== oldImageUrl &&
+                         oldImageUrl;
+
     if (!settings) {
-      settings = new Settings({ rankPromoImage: req.body.rankPromoImage });
+      settings = new Settings({
+        rankPromoImage: req.body.rankPromoImage,
+        rankPromoImagePublicId: req.body.rankPromoImagePublicId || ''
+      });
     } else {
       settings.rankPromoImage = req.body.rankPromoImage;
+      settings.rankPromoImagePublicId = req.body.rankPromoImagePublicId || '';
     }
+
     await settings.save();
-    res.json({ message: 'Rank promo image updated', rankPromoImage: settings.rankPromoImage });
+
+    // Cleanup old image
+    if (imageChanged) {
+      cloudinaryService.deleteImage(oldPublicId, oldImageUrl).catch(err => {
+        console.error('Failed to delete old rank promo image:', err);
+      });
+    }
+
+    res.json({
+      message: 'Rank promo image updated',
+      rankPromoImage: settings.rankPromoImage
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

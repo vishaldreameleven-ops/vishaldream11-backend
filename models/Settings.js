@@ -17,11 +17,11 @@ const settingsSchema = new mongoose.Schema({
   },
   whatsappNumber: {
     type: String,
-    default: '+917041508202'
+    default: '+918799553196'
   },
   contactNumber: {
     type: String,
-    default: '+917041508202'
+    default: '+917016432821'
   },
   // Featured match for homepage - synced from admin dashboard
   featuredMatch: {
@@ -41,10 +41,14 @@ const settingsSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
     emailUser: { type: String, default: '' },
     emailAppPassword: { type: String, default: '' },
-    emailFromName: { type: String, default: 'Dream 11 Office' }
+    emailFromName: { type: String, default: 'Come Office' }
   },
   // Rank booking promo image (1:1 aspect ratio)
   rankPromoImage: {
+    type: String,
+    default: ''
+  },
+  rankPromoImagePublicId: {
     type: String,
     default: ''
   }

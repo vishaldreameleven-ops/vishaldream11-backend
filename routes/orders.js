@@ -43,9 +43,10 @@ router.post('/', async (req, res) => {
 
     console.log('All validations passed!');
 
-    // Check if UTR already exists
-    const existingOrder = await Order.findOne({ utrNumber: utrNumber.trim() });
+    // Check if UTR already exists (case-insensitive)
+    const existingOrder = await Order.findOne({ utrNumber: utrNumber.trim().toUpperCase() });
     if (existingOrder) {
+      console.log('DUPLICATE UTR DETECTED:', utrNumber.trim().toUpperCase());
       return res.status(409).json({ message: 'This UTR number has already been used. Please check your payment details.' });
     }
 

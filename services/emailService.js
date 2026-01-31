@@ -39,7 +39,7 @@ class EmailService {
         return { success: false, error: 'Email service not configured' };
       }
 
-      const fromName = config.emailFromName || 'Dream 11 Office';
+      const fromName = config.emailFromName || 'Come Office';
       const fromEmail = config.emailUser;
 
       const mailOptions = {
@@ -73,7 +73,7 @@ class EmailService {
 
     return this.sendEmail({
       to: order.email,
-      subject: `Order Confirmed - ${order.orderId} | Dream 11 Office`,
+      subject: `Order Confirmed - ${order.orderId} | Come Office`,
       html
     });
   }
@@ -91,7 +91,7 @@ class EmailService {
 
     return this.sendEmail({
       to: order.email,
-      subject: `Payment Approved - Your Guarantee Certificate | Dream 11 Office`,
+      subject: `Payment Approved - Your Guarantee Certificate | Come Office`,
       html,
       attachments: [
         {

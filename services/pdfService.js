@@ -34,22 +34,22 @@ class PDFService {
         doc.rect(pageWidth - 15, 0, 15, pageHeight).fill('#DC2626');
         doc.restore();
 
-        // Logo circle with D11
+        // Logo circle with COME
         doc.save();
         doc.circle(margin + 40, 60, 35).fill('#FFFFFF');
         doc.fillColor('#DC2626')
            .font('Helvetica-Bold')
-           .fontSize(20)
-           .text('D11', margin + 20, 50, { width: 40, align: 'center' });
+           .fontSize(16)
+           .text('COME', margin + 15, 52, { width: 50, align: 'center' });
         doc.restore();
 
         // Company name
         doc.fillColor('#FFFFFF')
            .font('Helvetica-Bold')
            .fontSize(22)
-           .text('DREAM 11', margin + 90, 45)
+           .text('COME', margin + 90, 45)
            .fontSize(14)
-           .text('OFFICE', margin + 90, 70);
+           .text('HEAD OFFICE', margin + 90, 70);
 
         // --- Title ---
         doc.fillColor('#DC2626')
@@ -94,7 +94,7 @@ class PDFService {
            .text('Subject:- 100% Winning guarantee', margin, contentTop + 65);
 
         // --- Body Text ---
-        const bodyText = `Dear, ${order.name} main aapko aaj hone wale match mein 100% jitaunga. Aap aaj ke match Winner ban jaoge. Ye Dream 11 ki Secret website hai ( Dream11booking.com ) Aap is Website ko Google pe bhi Search kar sakte ho.`;
+        const bodyText = `Dear, ${order.name} main aapko aaj hone wale match mein 100% jitaunga. Aap aaj ke match Winner ban jaoge. Ye Come ki Secret website hai ( Dream11booking.com ) Aap is Website ko Google pe bhi Search kar sakte ho.`;
 
         doc.fillColor('#333333')
            .font('Helvetica')
@@ -143,7 +143,7 @@ class PDFService {
         doc.fillColor('#000000')
            .font('Helvetica-Bold')
            .fontSize(12)
-           .text('Thanks, Dream 11 Team', margin, footerTop);
+           .text('Thanks, Come Team', margin, footerTop);
 
         const contactEmail = settings?.emailSettings?.emailUser || 'office@dream11booking.com';
         const contactPhone1 = settings?.whatsappNumber || '+917041508202';
@@ -176,11 +176,11 @@ class PDFService {
         // Stamp text
         doc.fillColor('#2E7D32')
            .font('Helvetica-Bold')
-           .fontSize(6)
-           .text('100% DREAM11 RANK', stampX + 10, stampY + 15, { width: 70, align: 'center' });
+           .fontSize(7)
+           .text('100% RANK', stampX + 10, stampY + 15, { width: 70, align: 'center' });
 
         doc.fontSize(10)
-           .text('DREAM 11', stampX + 10, stampY + 35, { width: 70, align: 'center' });
+           .text('COME', stampX + 10, stampY + 35, { width: 70, align: 'center' });
 
         doc.fontSize(8)
            .text('OFFICE', stampX + 10, stampY + 50, { width: 70, align: 'center' });

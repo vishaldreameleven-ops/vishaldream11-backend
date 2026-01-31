@@ -186,7 +186,8 @@ router.post('/rank-promo', authMiddleware, upload.single('image'), async (req, r
           folder: 'dream11tips/rank-promo',
           resource_type: 'image',
           transformation: [
-            { width: 800, height: 800, crop: 'fill' }, // Force 1:1 aspect ratio
+            { effect: 'trim:30' },  // Auto-detect and remove borders (30% tolerance)
+            { width: 800, height: 800, crop: 'lpad', background: '#0a0a0a' },  // Pad to square with dark bg
             { quality: 'auto:good' },
             { fetch_format: 'auto' }
           ]

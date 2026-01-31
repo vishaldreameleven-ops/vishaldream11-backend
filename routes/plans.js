@@ -2,6 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const Plan = require('../models/Plan');
 const Settings = require('../models/Settings');
+const cloudinaryService = require('../services/cloudinaryService');
 
 const router = express.Router();
 
@@ -110,14 +111,34 @@ router.post('/', authMiddleware, async (req, res) => {
 // Update plan (admin)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
+    // Fetch old record BEFORE update
+    const oldPlan = await Plan.findById(req.params.id);
+
+    if (!oldPlan) {
+      return res.status(404).json({ message: 'Plan not found' });
+    }
+
+    // Check if image is being replaced
+    const imageChanged = req.body.imageUrl &&
+                         req.body.imageUrl !== oldPlan.imageUrl &&
+                         oldPlan.imageUrl;
+
+    // Perform update
     const plan = await Plan.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
 
-    if (!plan) {
-      return res.status(404).json({ message: 'Plan not found' });
+    // Clean up old image if replaced (non-blocking)
+    if (imageChanged) {
+      cloudinaryService.deleteModelImage(
+        oldPlan,
+        'imageUrl',
+        'imagePublicId'
+      ).catch(err => {
+        console.error(`Failed to delete old image for plan ${req.params.id}:`, err);
+      });
     }
 
     res.json({
@@ -135,10 +156,25 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // Delete plan (admin)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const plan = await Plan.findByIdAndDelete(req.params.id);
+    // Fetch record BEFORE deletion to get image info
+    const plan = await Plan.findById(req.params.id);
 
     if (!plan) {
       return res.status(404).json({ message: 'Plan not found' });
+    }
+
+    // Delete from database first (primary operation)
+    await Plan.findByIdAndDelete(req.params.id);
+
+    // Clean up Cloudinary image (non-blocking, fire-and-forget)
+    if (plan.imageUrl) {
+      cloudinaryService.deleteModelImage(
+        plan,
+        'imageUrl',
+        'imagePublicId'
+      ).catch(err => {
+        console.error(`Failed to delete image for plan ${req.params.id}:`, err);
+      });
     }
 
     res.json({ message: 'Plan deleted' });

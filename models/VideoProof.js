@@ -18,6 +18,10 @@ const videoProofSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  thumbnailPublicId: {
+    type: String,
+    default: ''
+  },
   date: {
     type: String,
     required: true

@@ -14,7 +14,7 @@ const orderApprovedTemplate = (order, settings) => {
     <!-- Header -->
     <tr>
       <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Dream 11 Office</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Come Office</h1>
         <p style="color: #ffffff; margin: 10px 0 0; font-size: 16px;">Payment Approved!</p>
       </td>
     </tr>
@@ -32,7 +32,7 @@ const orderApprovedTemplate = (order, settings) => {
         <h2 style="color: #333333; margin: 0 0 20px; text-align: center;">Congratulations, ${order.name}!</h2>
 
         <p style="color: #666666; font-size: 16px; line-height: 1.6; text-align: center;">
-          Your payment has been verified and approved. Welcome to the Dream 11 Office family!
+          Your payment has been verified and approved. Welcome to the Come Office family!
         </p>
 
         <!-- Order Details Box -->
@@ -94,7 +94,7 @@ const orderApprovedTemplate = (order, settings) => {
     <!-- Footer -->
     <tr>
       <td style="background-color: #333333; padding: 25px; text-align: center;">
-        <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px;">Thank you for choosing Dream 11 Office!</p>
+        <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px;">Thank you for choosing Come Office!</p>
         <p style="color: #999999; font-size: 12px; margin: 0;">
           ONE BKC TOWER, BANDRA KURLA COMPLEX, MUMBAI 400081<br>
           This is an automated email. Please do not reply.
