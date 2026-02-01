@@ -1,6 +1,66 @@
 const PDFDocument = require('pdfkit');
 
 class PDFService {
+  convertToHindi(text) {
+    const hinglishToHindi = {
+      'main': 'मैं',
+      'aapko': 'आपको',
+      'aaj': 'आज',
+      'hone wale': 'होने वाले',
+      'mein': 'में',
+      'jitaunga': 'जितूंगा',
+      'Aap': 'आप',
+      'ke': 'के',
+      'ban': 'बन',
+      'jaoge': 'जाओगे',
+      'Ye': 'ये',
+      'ki': 'की',
+      'hai': 'है',
+      'is': 'इस',
+      'ko': 'को',
+      'pe': 'पे',
+      'bhi': 'भी',
+      'kar': 'कर',
+      'sakte': 'सकते',
+      'ho': 'हो',
+      'Jitne': 'जितने',
+      'sabhi': 'सभी',
+      'sare': 'सारे',
+      'log': 'लोग',
+      'jeet': 'जीत',
+      'rahe': 'रहे',
+      'hain': 'हैं',
+      'Wo': 'वो',
+      'isi': 'इसी',
+      'se': 'से',
+      'karwate': 'करवाते',
+      'Yadi': 'यदि',
+      'kisi': 'किसी',
+      'karan': 'कारण',
+      'nahi': 'नहीं',
+      'jeette': 'जीतते',
+      'ya': 'या',
+      'aapki': 'आपकी',
+      'aati': 'आती',
+      'to': 'तो',
+      'dusre': 'दूसरे',
+      'jeeta': 'जीता',
+      'diya': 'दिया',
+      'jayega': 'जाएगा',
+      'paisa': 'पैसा',
+      'denge': 'देंगे'
+    };
+
+    let result = text;
+    // Replace whole words only
+    Object.entries(hinglishToHindi).forEach(([hinglish, hindi]) => {
+      const regex = new RegExp(`\\b${hinglish}\\b`, 'g');
+      result = result.replace(regex, hindi);
+    });
+
+    return result;
+  }
+
   async generateGuaranteeCertificate(order, settings) {
     return new Promise((resolve, reject) => {
       try {
@@ -52,7 +112,7 @@ class PDFService {
            .text('HEAD OFFICE', margin + 90, 70);
 
         // --- Title ---
-        doc.fillColor('#DC2626')
+        doc.fillColor('#000000')
            .font('Helvetica-Bold')
            .fontSize(28)
            .text('GUARANTEE LETTER', 0, 180, {
@@ -90,11 +150,12 @@ class PDFService {
         // --- Subject Line ---
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('#DC2626')
+           .fillColor('#000000')
            .text('Subject:- 100% Winning guarantee', margin, contentTop + 65);
 
         // --- Body Text ---
-        const bodyText = `Dear, ${order.name} main aapko aaj hone wale match mein 100% jitaunga. Aap aaj ke match Winner ban jaoge. Ye Come ki Secret website hai ( Dream11booking.com ) Aap is Website ko Google pe bhi Search kar sakte ho.`;
+        const bodyTextHinglish = `Dear, ${order.name} main aapko aaj hone wale match mein 100% jitaunga. Aap aaj ke match Winner ban jaoge. Ye Come ki Secret website hai ( 1strankcome.com ) Aap is Website ko Google pe bhi Search kar sakte ho.`;
+        const bodyText = this.convertToHindi(bodyTextHinglish);
 
         doc.fillColor('#333333')
            .font('Helvetica')
@@ -105,17 +166,24 @@ class PDFService {
            });
 
         // Important section
-        doc.fillColor('#DC2626')
+        const importantTextHinglish = 'Important:- Jitne bhi sare log 1st Rank mein 1 crore jeet rahe hain. Wo sabhi isi Website se Rank Book karwate hain.';
+        const importantText = this.convertToHindi(importantTextHinglish);
+
+        doc.fillColor('#000000')
            .font('Helvetica-Bold')
            .fontSize(11)
-           .text('Important:- Jitne bhi sare log 1st Rank mein 1 crore jeet rahe hain. Wo sabhi isi Website se Rank Book karwate hain.', margin, contentTop + 170, {
+           .text(importantText, margin, contentTop + 170, {
              width: pageWidth - 2 * margin - 20,
              lineGap: 5
            });
 
         // Guarantee section
-        doc.fillColor('#DC2626')
-           .text('Guarantee:- Yadi aap kisi karan aaj match nahi jeette ya aapki Rank nahi aati hai to aapko dusre match mein jeeta diya jayega ya aapka paisa Refund kar diya jayega.', margin, contentTop + 220, {
+        const guaranteeTextHinglish = 'Guarantee:- Yadi aap kisi karan aaj match nahi jeette ya aapki Rank nahi aati hai to aapko dusre match mein jeeta diya jayega ya aapka paisa Refund kar diya jayega.';
+        const guaranteeText = this.convertToHindi(guaranteeTextHinglish);
+
+        doc.fillColor('#000000')
+           .font('Helvetica-Bold')
+           .text(guaranteeText, margin, contentTop + 220, {
              width: pageWidth - 2 * margin - 20,
              lineGap: 5
            });
@@ -157,36 +225,84 @@ class PDFService {
            .text(contactPhone1.replace('+91', ''), margin, footerTop + 50)
            .text(contactPhone2.replace('+91', ''), margin, footerTop + 65);
 
-        // --- Official Stamp/Seal ---
-        const stampX = pageWidth - margin - 100;
-        const stampY = footerTop - 10;
+        // --- Professional Official Stamp/Seal ---
+        const stampX = pageWidth - margin - 110;
+        const stampY = footerTop - 20;
+        const stampRadius = 50;
 
-        // Outer circle
         doc.save();
-        doc.circle(stampX + 45, stampY + 45, 45)
-           .lineWidth(3)
+
+        // Outer decorative circle with thick border
+        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius)
+           .lineWidth(4)
+           .strokeColor('#1B5E20')
+           .stroke();
+
+        // Middle circle
+        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius - 8)
+           .lineWidth(2)
            .strokeColor('#2E7D32')
            .stroke();
 
         // Inner circle
-        doc.circle(stampX + 45, stampY + 45, 38)
-           .lineWidth(2)
+        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius - 14)
+           .lineWidth(1.5)
+           .strokeColor('#388E3C')
            .stroke();
 
-        // Stamp text
-        doc.fillColor('#2E7D32')
+        // Top arc text - "OFFICIAL GUARANTEE"
+        doc.fillColor('#1B5E20')
            .font('Helvetica-Bold')
-           .fontSize(7)
-           .text('100% RANK', stampX + 10, stampY + 15, { width: 70, align: 'center' });
+           .fontSize(7);
 
+        const topText = '★ OFFICIAL GUARANTEE ★';
+        doc.text(topText, stampX + 5, stampY + 10, {
+          width: stampRadius * 2 - 10,
+          align: 'center'
+        });
+
+        // Center - Company name
+        doc.fontSize(14)
+           .font('Helvetica-Bold')
+           .fillColor('#1B5E20')
+           .text('COME', stampX + 5, stampY + stampRadius - 15, {
+             width: stampRadius * 2 - 10,
+             align: 'center'
+           });
+
+        // Center - "OFFICE"
         doc.fontSize(10)
-           .text('COME', stampX + 10, stampY + 35, { width: 70, align: 'center' });
+           .text('OFFICE', stampX + 5, stampY + stampRadius + 3, {
+             width: stampRadius * 2 - 10,
+             align: 'center'
+           });
 
-        doc.fontSize(8)
-           .text('OFFICE', stampX + 10, stampY + 50, { width: 70, align: 'center' });
+        // Bottom arc text - "100% RANK BOOKING"
+        doc.fontSize(6.5)
+           .font('Helvetica-Bold')
+           .text('100% RANK BOOKING', stampX + 5, stampY + stampRadius * 2 - 25, {
+             width: stampRadius * 2 - 10,
+             align: 'center'
+           });
 
+        // Add decorative stars
+        doc.fontSize(10)
+           .text('★', stampX + 10, stampY + stampRadius - 5)
+           .text('★', stampX + stampRadius * 2 - 20, stampY + stampRadius - 5);
+
+        // Add date at bottom
+        const currentDate = new Date().toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
         doc.fontSize(6)
-           .text('BOOKING GUARANTEE', stampX + 10, stampY + 65, { width: 70, align: 'center' });
+           .font('Helvetica')
+           .fillColor('#2E7D32')
+           .text(currentDate, stampX + 5, stampY + stampRadius * 2 - 10, {
+             width: stampRadius * 2 - 10,
+             align: 'center'
+           });
 
         doc.restore();
 
