@@ -36,12 +36,15 @@ const settingsSchema = new mongoose.Schema({
     tournament: { type: String, default: 'IPL 2026' },
     isLive: { type: Boolean, default: false }
   },
-  // Email configuration
+  // Email configuration (using Resend)
   emailSettings: {
     enabled: { type: Boolean, default: false },
+    resendApiKey: { type: String, default: '' },
+    fromEmail: { type: String, default: 'onboarding@resend.dev' },
+    emailFromName: { type: String, default: 'Come Office' },
+    // Legacy Gmail fields (kept for backward compatibility)
     emailUser: { type: String, default: '' },
-    emailAppPassword: { type: String, default: '' },
-    emailFromName: { type: String, default: 'Come Office' }
+    emailAppPassword: { type: String, default: '' }
   },
   // Rank booking promo image (1:1 aspect ratio)
   rankPromoImage: {
