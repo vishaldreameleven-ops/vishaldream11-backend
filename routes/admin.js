@@ -5,6 +5,7 @@ const Settings = require('../models/Settings');
 const Order = require('../models/Order');
 const Plan = require('../models/Plan');
 const cloudinaryService = require('../services/cloudinaryService');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -146,6 +147,44 @@ router.put('/settings', authMiddleware, async (req, res) => {
     res.json({ message: 'Settings updated', settings });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Test email connection
+router.post('/test-email-connection', authMiddleware, async (req, res) => {
+  try {
+    console.log('Testing email connection...');
+    const result = await emailService.verifyConnection();
+    if (result.success) {
+      res.json({ success: true, message: 'Email connection verified successfully!' });
+    } else {
+      res.status(400).json({ success: false, error: result.error, originalError: result.originalError });
+    }
+  } catch (error) {
+    console.error('Email connection test error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Send test email
+router.post('/send-test-email', authMiddleware, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email address is required' });
+    }
+
+    console.log('Sending test email to:', email);
+    const result = await emailService.sendTestEmail(email);
+
+    if (result.success) {
+      res.json({ success: true, message: `Test email sent to ${email}`, messageId: result.messageId });
+    } else {
+      res.status(400).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error('Send test email error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
