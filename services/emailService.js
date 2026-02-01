@@ -1,6 +1,20 @@
 const nodemailer = require('nodemailer');
 const Settings = require('../models/Settings');
 
+// Helper function to add timeout to promises
+function withTimeout(promise, timeoutMs, errorMessage) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(errorMessage || `Operation timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
 class EmailService {
   constructor() {
     this.transporter = null;
@@ -30,6 +44,10 @@ class EmailService {
       return null;
     }
 
+    // Clean up the app password - remove spaces that might be pasted from Google
+    const cleanPassword = config.emailAppPassword.replace(/\s/g, '');
+    console.log('Password length after cleanup:', cleanPassword.length);
+
     // Use port 465 with SSL for better compatibility with cloud providers
     // Gmail supports both 587 (STARTTLS) and 465 (SSL)
     const transporter = nodemailer.createTransport({
@@ -38,7 +56,7 @@ class EmailService {
       secure: useSecurePort, // true for 465, false for 587
       auth: {
         user: config.emailUser,
-        pass: config.emailAppPassword
+        pass: cleanPassword
       },
       // Add timeout and connection settings for cloud environments
       connectionTimeout: 15000,
@@ -69,17 +87,22 @@ class EmailService {
     ];
 
     let lastError = null;
+    const VERIFY_TIMEOUT = 20000; // 20 seconds timeout
 
     for (const portConfig of portsToTry) {
       try {
-        console.log(`Verifying SMTP connection on port ${portConfig.name}...`);
+        console.log(`Verifying SMTP connection on port ${portConfig.name} (20s timeout)...`);
         const transporter = await this.createTransporter(portConfig.secure);
 
         if (!transporter) {
           return { success: false, error: 'Email service not configured or disabled' };
         }
 
-        await transporter.verify();
+        await withTimeout(
+          transporter.verify(),
+          VERIFY_TIMEOUT,
+          `Connection verification timed out on port ${portConfig.name}`
+        );
         console.log(`SMTP connection verified successfully on port ${portConfig.name}!`);
         return { success: true, message: `SMTP connection verified (port ${portConfig.name})` };
       } catch (error) {
@@ -130,6 +153,7 @@ class EmailService {
     // Try port 465 (SSL) first - more reliable on cloud providers like Render
     // If that fails, fallback to port 587 (STARTTLS)
     const portsToTry = [true, false]; // true = port 465, false = port 587
+    const SEND_TIMEOUT = 30000; // 30 seconds timeout per attempt
 
     for (const useSecurePort of portsToTry) {
       try {
@@ -145,8 +169,12 @@ class EmailService {
           return { success: false, error: 'Email service not configured' };
         }
 
-        console.log('Attempting to send email...');
-        const info = await transporter.sendMail(mailOptions);
+        console.log('Attempting to send email (30s timeout)...');
+        const info = await withTimeout(
+          transporter.sendMail(mailOptions),
+          SEND_TIMEOUT,
+          `Email send timed out after ${SEND_TIMEOUT / 1000}s on port ${useSecurePort ? '465' : '587'}`
+        );
         console.log(`Email sent successfully to ${to}`);
         console.log('Message ID:', info.messageId);
         console.log('Response:', info.response);

@@ -16,8 +16,27 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
+// CORS configuration - allow your frontend domains
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://1strankcome.com',
+    'https://www.1strankcome.com',
+    'https://vishaldream11.vercel.app',
+    // Allow all origins as fallback (for testing)
+    /\.vercel\.app$/,
+    /\.onrender\.com$/
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Request logging
