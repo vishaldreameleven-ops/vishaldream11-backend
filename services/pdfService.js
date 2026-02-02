@@ -69,6 +69,11 @@ class PDFService {
           margin: 40
         });
 
+        // Register Devanagari font for Hindi text support
+        const path = require('path');
+        const fontPath = path.join(__dirname, '../fonts/NotoSansDevanagari-Regular.ttf');
+        doc.registerFont('Devanagari', fontPath);
+
         const chunks = [];
         doc.on('data', chunk => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -154,8 +159,7 @@ class PDFService {
            .text('Subject:- 100% Winning guarantee', margin, contentTop + 65);
 
         // --- Body Text ---
-        const bodyTextHinglish = `Dear, ${order.name} main aapko aaj hone wale match mein 100% jitaunga. Aap aaj ke match Winner ban jaoge. Ye Come ki Secret website hai ( 1strankcome.com ) Aap is Website ko Google pe bhi Search kar sakte ho.`;
-        const bodyText = this.convertToHindi(bodyTextHinglish);
+        const bodyText = `Dear, ${order.name}, I will ensure you get 100% winning results in today's match. You will become the match Winner today. This is Come's secret website (1strankcome.com). You can also search for this website on Google.`;
 
         doc.fillColor('#333333')
            .font('Helvetica')
@@ -166,8 +170,7 @@ class PDFService {
            });
 
         // Important section
-        const importantTextHinglish = 'Important:- Jitne bhi sare log 1st Rank mein 1 crore jeet rahe hain. Wo sabhi isi Website se Rank Book karwate hain.';
-        const importantText = this.convertToHindi(importantTextHinglish);
+        const importantText = 'Important:- All the people who are winning 1st Rank and earning 1 crore are booking their Rank through this website only.';
 
         doc.fillColor('#000000')
            .font('Helvetica-Bold')
@@ -178,11 +181,11 @@ class PDFService {
            });
 
         // Guarantee section
-        const guaranteeTextHinglish = 'Guarantee:- Yadi aap kisi karan aaj match nahi jeette ya aapki Rank nahi aati hai to aapko dusre match mein jeeta diya jayega ya aapka paisa Refund kar diya jayega.';
-        const guaranteeText = this.convertToHindi(guaranteeTextHinglish);
+        const guaranteeText = 'Guarantee:- If for any reason you do not win today\'s match or you don\'t get your Rank, then you will be given a win in the next match or your money will be refunded.';
 
         doc.fillColor('#000000')
            .font('Helvetica-Bold')
+           .fontSize(11)
            .text(guaranteeText, margin, contentTop + 220, {
              width: pageWidth - 2 * margin - 20,
              lineGap: 5
@@ -225,84 +228,142 @@ class PDFService {
            .text(contactPhone1.replace('+91', ''), margin, footerTop + 50)
            .text(contactPhone2.replace('+91', ''), margin, footerTop + 65);
 
-        // --- Professional Official Stamp/Seal ---
-        const stampX = pageWidth - margin - 110;
-        const stampY = footerTop - 20;
-        const stampRadius = 50;
+        // --- Enhanced Professional Official Stamp/Seal ---
+        const stampX = pageWidth - margin - 120;
+        const stampY = footerTop - 30;
+        const stampRadius = 58;
+        const centerX = stampX + stampRadius;
+        const centerY = stampY + stampRadius;
 
         doc.save();
 
-        // Outer decorative circle with thick border
-        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius)
-           .lineWidth(4)
-           .strokeColor('#1B5E20')
+        // Enhanced multi-layer concentric circles for depth
+        // Outermost circle - darkest green
+        doc.circle(centerX, centerY, stampRadius)
+           .lineWidth(3.5)
+           .strokeColor('#0D5016')
            .stroke();
 
-        // Middle circle
-        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius - 8)
-           .lineWidth(2)
+        // Second circle with dash pattern
+        doc.circle(centerX, centerY, stampRadius - 5)
+           .lineWidth(1.5)
+           .strokeColor('#1B5E20')
+           .dash(2, { space: 2 })
+           .stroke();
+        doc.undash();
+
+        // Third circle - medium thick
+        doc.circle(centerX, centerY, stampRadius - 9)
+           .lineWidth(2.5)
            .strokeColor('#2E7D32')
            .stroke();
 
-        // Inner circle
-        doc.circle(stampX + stampRadius, stampY + stampRadius, stampRadius - 14)
-           .lineWidth(1.5)
+        // Fourth circle with subtle dash
+        doc.circle(centerX, centerY, stampRadius - 13)
+           .lineWidth(1)
            .strokeColor('#388E3C')
+           .dash(1, { space: 1 })
+           .stroke();
+        doc.undash();
+
+        // Fifth circle
+        doc.circle(centerX, centerY, stampRadius - 16)
+           .lineWidth(2)
+           .strokeColor('#43A047')
            .stroke();
 
-        // Top arc text - "OFFICIAL GUARANTEE"
-        doc.fillColor('#1B5E20')
+        // Innermost circle
+        doc.circle(centerX, centerY, stampRadius - 20)
+           .lineWidth(1.5)
+           .strokeColor('#4CAF50')
+           .stroke();
+
+        // Add decorative corner marks around outer circle
+        const decorativeDistance = stampRadius + 5;
+        const decorativeLength = 6;
+        const positions = [0, 90, 180, 270]; // top, right, bottom, left
+
+        positions.forEach(angle => {
+          const rad = (angle * Math.PI) / 180;
+          const x = centerX + Math.cos(rad) * decorativeDistance;
+          const y = centerY + Math.sin(rad) * decorativeDistance;
+          const x2 = centerX + Math.cos(rad) * (decorativeDistance + decorativeLength);
+          const y2 = centerY + Math.sin(rad) * (decorativeDistance + decorativeLength);
+
+          doc.moveTo(x, y)
+             .lineTo(x2, y2)
+             .lineWidth(2)
+             .strokeColor('#0D5016')
+             .stroke();
+        });
+
+        // Top arc text - "OFFICIAL GUARANTEE" with improved styling
+        doc.fillColor('#0D5016')
            .font('Helvetica-Bold')
-           .fontSize(7);
+           .fontSize(8);
 
         const topText = '★ OFFICIAL GUARANTEE ★';
-        doc.text(topText, stampX + 5, stampY + 10, {
-          width: stampRadius * 2 - 10,
+        doc.text(topText, stampX, stampY + 12, {
+          width: stampRadius * 2,
           align: 'center'
         });
 
-        // Center - Company name
-        doc.fontSize(14)
+        // Center - Company name with larger, bolder styling
+        doc.fontSize(18)
            .font('Helvetica-Bold')
+           .fillColor('#0D5016')
+           .text('COME', stampX, stampY + stampRadius - 18, {
+             width: stampRadius * 2,
+             align: 'center'
+           });
+
+        // Center - "OFFICE" with improved spacing
+        doc.fontSize(12)
            .fillColor('#1B5E20')
-           .text('COME', stampX + 5, stampY + stampRadius - 15, {
-             width: stampRadius * 2 - 10,
+           .text('OFFICE', stampX, stampY + stampRadius + 5, {
+             width: stampRadius * 2,
              align: 'center'
            });
 
-        // Center - "OFFICE"
-        doc.fontSize(10)
-           .text('OFFICE', stampX + 5, stampY + stampRadius + 3, {
-             width: stampRadius * 2 - 10,
-             align: 'center'
-           });
-
-        // Bottom arc text - "100% RANK BOOKING"
-        doc.fontSize(6.5)
+        // Bottom arc text - "100% RANK BOOKING" with better visibility
+        doc.fontSize(7.5)
            .font('Helvetica-Bold')
-           .text('100% RANK BOOKING', stampX + 5, stampY + stampRadius * 2 - 25, {
-             width: stampRadius * 2 - 10,
+           .fillColor('#0D5016')
+           .text('100% RANK BOOKING', stampX, stampY + stampRadius * 2 - 28, {
+             width: stampRadius * 2,
              align: 'center'
            });
 
-        // Add decorative stars
-        doc.fontSize(10)
-           .text('★', stampX + 10, stampY + stampRadius - 5)
-           .text('★', stampX + stampRadius * 2 - 20, stampY + stampRadius - 5);
+        // Add larger decorative stars for emphasis
+        doc.fontSize(12)
+           .fillColor('#2E7D32')
+           .text('★', stampX + 8, stampY + stampRadius - 8)
+           .text('★', stampX + stampRadius * 2 - 20, stampY + stampRadius - 8);
 
-        // Add date at bottom
+        // Add date at bottom with better formatting
         const currentDate = new Date().toLocaleDateString('en-IN', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
         });
-        doc.fontSize(6)
+        doc.fontSize(7)
            .font('Helvetica')
            .fillColor('#2E7D32')
-           .text(currentDate, stampX + 5, stampY + stampRadius * 2 - 10, {
-             width: stampRadius * 2 - 10,
+           .text(currentDate, stampX, stampY + stampRadius * 2 - 12, {
+             width: stampRadius * 2,
              align: 'center'
            });
+
+        // Add small decorative dots between circles for texture
+        const dotRadius = stampRadius - 10;
+        for (let angle = 0; angle < 360; angle += 30) {
+          const rad = (angle * Math.PI) / 180;
+          const dotX = centerX + Math.cos(rad) * dotRadius;
+          const dotY = centerY + Math.sin(rad) * dotRadius;
+          doc.circle(dotX, dotY, 1)
+             .fillColor('#388E3C')
+             .fill();
+        }
 
         doc.restore();
 
