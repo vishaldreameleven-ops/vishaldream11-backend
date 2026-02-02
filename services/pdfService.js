@@ -159,10 +159,10 @@ class PDFService {
            .text('Subject:- 100% Winning guarantee', margin, contentTop + 65);
 
         // --- Body Text ---
-        const bodyText = `Dear, ${order.name}, I will ensure you get 100% winning results in today's match. You will become the match Winner today. This is Come's secret website (1strankcome.com). You can also search for this website on Google.`;
+        const bodyText = `Dear ${order.name}, मैं आपको आज होने वाले Match में 100% जिताऊंगा। आप आज के Match Winner बन जाओगे। ये Come की Secret Website है (1strankcome.com) आप इस Website को Google पे भी Search कर सकते हो।`;
 
         doc.fillColor('#333333')
-           .font('Helvetica')
+           .font('Devanagari')
            .fontSize(11)
            .text(bodyText, margin, contentTop + 100, {
              width: pageWidth - 2 * margin - 20,
@@ -170,10 +170,10 @@ class PDFService {
            });
 
         // Important section
-        const importantText = 'Important:- All the people who are winning 1st Rank and earning 1 crore are booking their Rank through this website only.';
+        const importantText = 'Important:- जितने भी लोग 1st Rank जीतकर 1 Crore कमा रहे हैं, वो सभी इसी Website से अपनी Rank Book कर रहे हैं।';
 
         doc.fillColor('#000000')
-           .font('Helvetica-Bold')
+           .font('Devanagari')
            .fontSize(11)
            .text(importantText, margin, contentTop + 170, {
              width: pageWidth - 2 * margin - 20,
@@ -181,11 +181,10 @@ class PDFService {
            });
 
         // Guarantee section
-        const guaranteeText = 'Guarantee:- If for any reason you do not win today\'s match or you don\'t get your Rank, then you will be given a win in the next match or your money will be refunded.';
+        const guaranteeText = 'Guarantee:- अगर किसी Reason से आज आप Match नहीं जीतते या आपकी Rank नहीं आती, तो आपको Next Match में Win दी जाएगी या आपके पैसे Refund कर दिए जाएंगे।';
 
         doc.fillColor('#000000')
-           .font('Helvetica-Bold')
-           .fontSize(11)
+           .font('Devanagari')
            .text(guaranteeText, margin, contentTop + 220, {
              width: pageWidth - 2 * margin - 20,
              lineGap: 5
