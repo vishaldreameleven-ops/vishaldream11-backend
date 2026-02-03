@@ -293,6 +293,66 @@ router.put('/rank-promo-image', authMiddleware, async (req, res) => {
   }
 });
 
+// Get timer settings (PUBLIC - no auth required for homepage)
+router.get('/timer', async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    res.json({
+      timerDeadline: settings.timerDeadline || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get timer settings for admin dashboard (admin only)
+router.get('/timer-settings', authMiddleware, async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    res.json({
+      timerDeadline: settings.timerDeadline
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update timer settings (admin only)
+router.put('/timer-settings', authMiddleware, async (req, res) => {
+  try {
+    const { timerDeadline } = req.body;
+
+    if (!timerDeadline) {
+      return res.status(400).json({ message: 'Timer deadline is required' });
+    }
+
+    const deadline = new Date(timerDeadline);
+    if (isNaN(deadline.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // Check if deadline is in the future
+    if (deadline <= new Date()) {
+      return res.status(400).json({ message: 'Timer deadline must be in the future' });
+    }
+
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings({ timerDeadline: deadline });
+    } else {
+      settings.timerDeadline = deadline;
+    }
+
+    await settings.save();
+    res.json({
+      message: 'Timer deadline updated successfully',
+      timerDeadline: settings.timerDeadline
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Initialize default data (run once)
 router.post('/init', authMiddleware, async (req, res) => {
   try {

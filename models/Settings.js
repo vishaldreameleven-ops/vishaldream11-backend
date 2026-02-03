@@ -54,6 +54,11 @@ const settingsSchema = new mongoose.Schema({
   rankPromoImagePublicId: {
     type: String,
     default: ''
+  },
+  // Timer deadline for homepage countdown
+  timerDeadline: {
+    type: Date,
+    default: () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // Default: 2 days from now
   }
 }, {
   timestamps: true

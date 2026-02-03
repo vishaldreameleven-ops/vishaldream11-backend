@@ -99,22 +99,19 @@ class PDFService {
         doc.rect(pageWidth - 15, 0, 15, pageHeight).fill('#DC2626');
         doc.restore();
 
-        // Logo circle with COME
-        doc.save();
-        doc.circle(margin + 40, 60, 35).fill('#FFFFFF');
-        doc.fillColor('#DC2626')
-           .font('Helvetica-Bold')
-           .fontSize(16)
-           .text('COME', margin + 15, 52, { width: 50, align: 'center' });
-        doc.restore();
+        // Company Logo
+        const logoPath = path.join(__dirname, '../assets/come-logo.png');
+        doc.image(logoPath, margin + 10, 30, {
+          width: 120,
+          height: 60,
+          fit: [120, 60]
+        });
 
         // Company name
         doc.fillColor('#FFFFFF')
            .font('Helvetica-Bold')
-           .fontSize(22)
-           .text('COME', margin + 90, 45)
            .fontSize(14)
-           .text('HEAD OFFICE', margin + 90, 70);
+           .text('HEAD OFFICE', margin + 140, 55);
 
         // --- Title ---
         doc.fillColor('#000000')
@@ -215,7 +212,7 @@ class PDFService {
            .fontSize(12)
            .text('Thanks, Come Team', margin, footerTop);
 
-        const contactEmail = settings?.emailSettings?.emailUser || 'office@dream11booking.com';
+        const contactEmail = settings?.emailSettings?.emailUser || 'vishal.comeofficer@gmail.com';
         const contactPhone1 = settings?.whatsappNumber || '+917041508202';
         const contactPhone2 = settings?.contactNumber || '+917041508202';
 

@@ -36,9 +36,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Please enter UTR/Transaction ID' });
     }
 
-    if (!planName || !amount) {
-      console.log('VALIDATION FAILED: No planName or amount', { planName, amount });
-      return res.status(400).json({ message: 'Invalid item details. Please refresh and try again.' });
+    // Validate based on item type
+    if (itemType === 'rank') {
+      // For ranks, only amount is required (planName will be fetched from DB)
+      if (!amount) {
+        console.log('VALIDATION FAILED: No amount for rank', { amount });
+        return res.status(400).json({ message: 'Invalid item details. Please refresh and try again.' });
+      }
+    } else {
+      // For plans, both planName and amount are required
+      if (!planName || !amount) {
+        console.log('VALIDATION FAILED: No planName or amount', { planName, amount });
+        return res.status(400).json({ message: 'Invalid item details. Please refresh and try again.' });
+      }
     }
 
     console.log('All validations passed!');
