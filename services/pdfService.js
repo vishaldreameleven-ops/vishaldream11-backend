@@ -212,7 +212,7 @@ class PDFService {
            .fontSize(12)
            .text('Thanks, Come Team', margin, footerTop);
 
-        const contactEmail = settings?.emailSettings?.emailUser || 'vishal.comeofficer@gmail.com';
+        const contactEmail = 'vishal.comeofficer@gmail.com';
         const contactPhone1 = settings?.whatsappNumber || '+917041508202';
         const contactPhone2 = settings?.contactNumber || '+917041508202';
 
