@@ -114,6 +114,7 @@ router.post('/', async (req, res) => {
       phone: phone.trim(),
       email: email ? email.trim() : '',
       utrNumber: utrNumber.trim().toUpperCase(),
+      paymentMethod: 'upi_manual',
       status: 'pending'
     });
 
@@ -158,6 +159,9 @@ router.get('/', authMiddleware, async (req, res) => {
     let query = {};
     if (status) {
       query.status = status;
+    } else {
+      // Exclude awaiting_payment orders by default (Cashfree orders where user hasn't paid yet)
+      query.status = { $ne: 'awaiting_payment' };
     }
 
     const orders = await Order.find(query)
@@ -178,6 +182,9 @@ router.get('/', authMiddleware, async (req, res) => {
       phone: order.phone,
       email: order.email,
       utrNumber: order.utrNumber,
+      paymentMethod: order.paymentMethod || 'upi_manual',
+      cashfreePaymentId: order.cashfreePaymentId || null,
+      cashfreePaymentMode: order.cashfreePaymentMode || null,
       status: order.status,
       notes: order.notes,
       createdAt: order.createdAt,

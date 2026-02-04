@@ -48,13 +48,37 @@ const orderSchema = new mongoose.Schema({
   },
   utrNumber: {
     type: String,
-    required: true,
+    required: function() {
+      return this.paymentMethod === 'upi_manual';
+    },
     trim: true,
-    uppercase: true
+    uppercase: true,
+    default: null
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['upi_manual', 'cashfree'],
+    default: 'upi_manual'
+  },
+  cashfreeOrderId: {
+    type: String,
+    default: null
+  },
+  cashfreePaymentId: {
+    type: String,
+    default: null
+  },
+  cashfreePaymentStatus: {
+    type: String,
+    default: null
+  },
+  cashfreePaymentMode: {
+    type: String,
+    default: null
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'completed'],
+    enum: ['awaiting_payment', 'pending', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
   notes: {
@@ -65,6 +89,7 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// No need for pre-save hook - orderId is auto-generated via default
+// Unique index on utrNumber but allow nulls (for Cashfree orders)
+orderSchema.index({ utrNumber: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Order', orderSchema);

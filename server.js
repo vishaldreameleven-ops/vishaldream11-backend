@@ -9,6 +9,7 @@ const ranksRoutes = require('./routes/ranks');
 const ordersRoutes = require('./routes/orders');
 const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
+const cashfreeRoutes = require('./routes/cashfree');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,7 +36,14 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    // Store raw body for Cashfree webhook signature verification
+    if (req.originalUrl === '/api/cashfree/webhook') {
+      req.rawBody = buf.toString();
+    }
+  }
+}));
 
 // Request logging
 app.use((req, res, next) => {
@@ -50,6 +58,7 @@ app.use('/api/ranks', ranksRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/cashfree', cashfreeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
