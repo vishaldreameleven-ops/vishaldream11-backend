@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema({
   },
   itemType: {
     type: String,
-    enum: ['plan', 'rank'],
+    enum: ['plan', 'rank', 'custom'],
     default: 'plan'
   },
   planName: {
