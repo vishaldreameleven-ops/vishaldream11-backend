@@ -70,8 +70,8 @@ router.post('/create-order', async (req, res) => {
   try {
     const { planId, rankId, itemType, planName, rankNumber, amount, name, phone, email } = req.body;
 
-    // Validations
-    if (!planId && !rankId) {
+    // Validations - allow custom payments without planId/rankId
+    if (!planId && !rankId && itemType !== 'custom') {
       return res.status(400).json({ message: 'Order type (plan or rank) is required' });
     }
     if (!name || !name.trim()) {
@@ -94,7 +94,14 @@ router.post('/create-order', async (req, res) => {
     let finalRankId = rankId || null;
     let finalItemType = itemType || 'plan';
 
-    if (itemType === 'rank' && rankId) {
+    if (itemType === 'custom' && amount > 0) {
+      // Custom payment - use provided amount and planName directly
+      finalAmount = parseFloat(amount);
+      finalPlanName = planName || 'Custom Payment';
+      finalItemType = 'custom';
+      finalPlanId = null;
+      finalRankId = null;
+    } else if (itemType === 'rank' && rankId) {
       try {
         const Rank = require('../models/Rank');
         const rank = await Rank.findById(rankId);
