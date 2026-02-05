@@ -66,6 +66,68 @@ const cashfreeService = {
       console.error('Webhook signature verification failed:', error.message);
       return false;
     }
+  },
+
+  /**
+   * Create a Cashfree Payment Link (shareable URL)
+   */
+  async createPaymentLink({ linkId, amount, purpose, customerName, customerEmail, customerPhone, returnUrl, expiryTime }) {
+    const request = {
+      link_id: linkId,
+      link_amount: amount,
+      link_currency: 'INR',
+      link_purpose: purpose || 'Payment',
+      customer_details: {
+        customer_phone: customerPhone,
+        customer_email: customerEmail,
+        customer_name: customerName,
+      },
+      link_meta: {
+        return_url: returnUrl + '?link_id={link_id}',
+        notify_url: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace('localhost:3000', 'localhost:5000').replace(':3000', ':5000')}/api/cashfree/webhook` : undefined,
+      },
+      link_expiry_time: expiryTime || null,
+      link_notify: {
+        send_sms: false,
+        send_email: false,
+      },
+    };
+
+    const response = await cashfreeClient.PGCreateLink(request);
+
+    if (!response || !response.data) {
+      throw new Error('Empty response from Cashfree');
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Get Payment Link status
+   */
+  async getLinkStatus(linkId) {
+    try {
+      console.log('Fetching link status for:', linkId);
+      const response = await cashfreeClient.PGFetchLink(linkId);
+
+      // Extract data safely (response is axios response object)
+      const data = response?.data;
+      console.log('Link status data:', data ? JSON.stringify(data, null, 2) : 'null');
+
+      if (!data) {
+        console.log('No data in response');
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('getLinkStatus error:', error.message);
+      // Try to extract error response data if available
+      if (error.response?.data) {
+        console.error('Error response:', JSON.stringify(error.response.data, null, 2));
+      }
+      return null;
+    }
   }
 };
 

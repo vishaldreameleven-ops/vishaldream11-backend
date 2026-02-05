@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -12,7 +14,41 @@ const uploadRoutes = require('./routes/upload');
 const cashfreeRoutes = require('./routes/cashfree');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Socket.io setup with CORS
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://1strankcome.com',
+      'https://www.1strankcome.com',
+      'https://vishaldream11.vercel.app',
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Admin client connected:', socket.id);
+
+  // Join admin room for order notifications
+  socket.on('join-admin', () => {
+    socket.join('admin-room');
+    console.log('Client joined admin-room:', socket.id);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Connect to MongoDB
 connectDB();
@@ -76,8 +112,9 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.io enabled for real-time updates`);
   console.log(`Admin login: POST /api/admin/login`);
   console.log(`Plans: GET /api/plans`);
   console.log(`Orders: POST /api/orders`);

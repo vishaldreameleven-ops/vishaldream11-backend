@@ -20,7 +20,7 @@ async function sendApprovalEmail(order) {
 }
 
 // Helper: Approve order atomically (prevents race condition between webhook and verify)
-async function approveOrder(orderId, paymentId, paymentStatus, paymentMode, paymentAmount) {
+async function approveOrder(orderId, paymentId, paymentStatus, paymentMode, paymentAmount, io = null) {
   // Use findOneAndUpdate with condition to prevent double-approval
   const updatedOrder = await Order.findOneAndUpdate(
     { orderId: orderId, status: { $ne: 'approved' } },
@@ -42,6 +42,22 @@ async function approveOrder(orderId, paymentId, paymentStatus, paymentMode, paym
   }
 
   console.log(`Order ${orderId} approved (amount: ₹${paymentAmount})`);
+
+  // Emit socket event for approved order (real-time admin notification)
+  if (io) {
+    io.to('admin-room').emit('new-order', {
+      id: updatedOrder._id.toString(),
+      orderId: updatedOrder.orderId,
+      planName: updatedOrder.planName,
+      amount: updatedOrder.amount,
+      name: updatedOrder.name,
+      phone: updatedOrder.phone,
+      status: updatedOrder.status,
+      paymentMethod: updatedOrder.paymentMethod,
+      createdAt: updatedOrder.createdAt
+    });
+    console.log('Socket event emitted: new-order (cashfree approved)', updatedOrder.orderId);
+  }
 
   // Send email in background (non-blocking)
   sendApprovalEmail(updatedOrder);
@@ -225,7 +241,8 @@ router.post('/webhook', async (req, res) => {
       }
 
       // Approve order atomically (prevents race condition & duplicate emails)
-      await approveOrder(orderId, paymentId, paymentStatus, paymentMode, paymentAmount);
+      const io = req.app.get('io');
+      await approveOrder(orderId, paymentId, paymentStatus, paymentMode, paymentAmount, io);
     }
 
     res.status(200).json({ message: 'Webhook processed' });
@@ -233,6 +250,155 @@ router.post('/webhook', async (req, res) => {
     console.error('Webhook processing error:', error.message);
     // Return 500 so Cashfree retries the webhook
     res.status(500).json({ message: 'Webhook processing failed' });
+  }
+});
+
+// POST /api/cashfree/create-link - Create a shareable payment link
+router.post('/create-link', async (req, res) => {
+  try {
+    const { amount, purpose, customerName, customerEmail, customerPhone, expiryDays } = req.body;
+
+    // Validations
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required' });
+    }
+    if (!customerName || !customerName.trim()) {
+      return res.status(400).json({ message: 'Customer name is required' });
+    }
+    if (!customerPhone || !customerPhone.trim()) {
+      return res.status(400).json({ message: 'Customer phone is required' });
+    }
+    if (!customerEmail || !customerEmail.trim()) {
+      return res.status(400).json({ message: 'Customer email is required' });
+    }
+    if (!/^[6-9]\d{9}$/.test(customerPhone.trim())) {
+      return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const returnUrl = `${frontendUrl}/payment/link-status`;
+
+    // Generate unique link ID
+    const linkId = 'LINK' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
+
+    // Calculate expiry time (default 7 days)
+    let expiryTime = null;
+    if (expiryDays) {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + expiryDays);
+      expiryTime = expiryDate.toISOString();
+    }
+
+    const paymentLink = await cashfreeService.createPaymentLink({
+      linkId,
+      amount: parseFloat(amount),
+      purpose: purpose || 'Premium Rank Payment',
+      customerName: customerName.trim(),
+      customerEmail: customerEmail.trim(),
+      customerPhone: customerPhone.trim(),
+      returnUrl,
+      expiryTime,
+    });
+
+    if (!paymentLink || !paymentLink.link_url) {
+      return res.status(500).json({ message: 'Failed to create payment link' });
+    }
+
+    // Create order record for this payment link
+    const order = new Order({
+      orderId: linkId,
+      planId: null,
+      rankId: null,
+      itemType: 'rank',
+      planName: purpose || 'Premium Rank Payment',
+      amount: parseFloat(amount),
+      name: customerName.trim(),
+      phone: customerPhone.trim(),
+      email: customerEmail.trim(),
+      utrNumber: null,
+      paymentMethod: 'cashfree',
+      cashfreeOrderId: String(paymentLink.link_id),
+      status: 'awaiting_payment'
+    });
+
+    await order.save();
+
+    res.status(201).json({
+      success: true,
+      linkId: linkId,
+      linkUrl: paymentLink.link_url,
+      amount: amount,
+      expiresAt: paymentLink.link_expiry_time,
+    });
+  } catch (error) {
+    console.error('Payment link creation error:', error.message);
+    res.status(500).json({ message: 'Failed to create payment link. ' + error.message });
+  }
+});
+
+// GET /api/cashfree/verify-link/:linkId - Verify payment link status
+router.get('/verify-link/:linkId', async (req, res) => {
+  try {
+    const order = await Order.findOne({ orderId: req.params.linkId });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // If already approved, return immediately
+    if (order.status === 'approved') {
+      return res.json({
+        success: true,
+        orderId: order.orderId,
+        status: order.status,
+        planName: order.planName,
+        amount: order.amount,
+      });
+    }
+
+    // Check link status from Cashfree
+    try {
+      const linkStatus = await cashfreeService.getLinkStatus(order.orderId);
+      console.log('Link status response:', JSON.stringify(linkStatus, null, 2));
+
+      if (linkStatus && linkStatus.link_status === 'PAID') {
+        // Get payment details
+        const payments = linkStatus.link_orders || [];
+        const successfulPayment = payments.find(p => p.order_status === 'PAID');
+
+        if (successfulPayment) {
+          // Approve order
+          const io = req.app.get('io');
+          const approved = await approveOrder(
+            order.orderId,
+            successfulPayment.cf_order_id || linkStatus.link_id,
+            'SUCCESS',
+            'payment_link',
+            order.amount,
+            io
+          );
+
+          return res.json({
+            success: true,
+            orderId: order.orderId,
+            status: 'approved',
+            planName: order.planName,
+            amount: order.amount,
+          });
+        }
+      }
+    } catch (cfError) {
+      console.log('Cashfree link status check failed:', cfError.message);
+    }
+
+    res.json({
+      success: false,
+      orderId: order.orderId,
+      status: order.status,
+      message: 'Payment is being processed.',
+    });
+  } catch (error) {
+    console.error('Link verification error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -277,12 +443,14 @@ router.get('/verify/:orderId', async (req, res) => {
           }
 
           // Approve atomically (same helper as webhook — prevents double email)
+          const io = req.app.get('io');
           const approved = await approveOrder(
             order.orderId,
             successfulPayment.cf_payment_id,
             successfulPayment.payment_status,
             successfulPayment.payment_group,
-            successfulPayment.payment_amount
+            successfulPayment.payment_amount,
+            io
           );
 
           return res.json({

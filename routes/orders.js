@@ -120,6 +120,23 @@ router.post('/', async (req, res) => {
 
     await order.save();
 
+    // Emit socket event for new order (real-time admin notification)
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin-room').emit('new-order', {
+        id: order._id.toString(),
+        orderId: order.orderId,
+        planName: order.planName,
+        amount: order.amount,
+        name: order.name,
+        phone: order.phone,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        createdAt: order.createdAt
+      });
+      console.log('Socket event emitted: new-order', order.orderId);
+    }
+
     // Send order confirmation email (non-blocking)
     try {
       const settings = await Settings.getSettings();
