@@ -84,7 +84,8 @@ const cashfreeService = {
       },
       link_meta: {
         return_url: returnUrl + '?link_id={link_id}',
-        notify_url: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace('localhost:3000', 'localhost:5000').replace(':3000', ':5000')}/api/cashfree/webhook` : undefined,
+        // Use BACKEND_URL for webhook, not FRONTEND_URL
+        notify_url: process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/api/cashfree/webhook` : undefined,
       },
       link_expiry_time: expiryTime || null,
       link_notify: {
@@ -93,13 +94,23 @@ const cashfreeService = {
       },
     };
 
-    const response = await cashfreeClient.PGCreateLink(request);
+    console.log('Creating payment link with request:', JSON.stringify(request, null, 2));
 
-    if (!response || !response.data) {
-      throw new Error('Empty response from Cashfree');
+    try {
+      const response = await cashfreeClient.PGCreateLink(request);
+
+      if (!response || !response.data) {
+        throw new Error('Empty response from Cashfree');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Cashfree PGCreateLink error:', error.message);
+      if (error.response?.data) {
+        console.error('Cashfree error details:', JSON.stringify(error.response.data, null, 2));
+      }
+      throw error;
     }
-
-    return response.data;
   },
 
   /**
