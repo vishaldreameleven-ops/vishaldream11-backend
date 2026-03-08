@@ -84,6 +84,22 @@ const orderSchema = new mongoose.Schema({
   notes: {
     type: String,
     default: ''
+  },
+  callAttempts: {
+    type: Number,
+    default: 0
+  },
+  callAttemptedAt: {
+    type: Date,
+    default: null
+  },
+  callOutcome: {
+    type: String,
+    default: null
+  },
+  vapiCallId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true

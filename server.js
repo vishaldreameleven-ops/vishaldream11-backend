@@ -12,6 +12,11 @@ const ordersRoutes = require('./routes/orders');
 const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
 const cashfreeRoutes = require('./routes/cashfree');
+const userAuthRoutes = require('./routes/userAuth');
+const fantasyTeamRoutes = require('./routes/fantasyTeam');
+const vapiLLMRoutes = require('./routes/vapiLLM');
+const vapiWebhookRoutes = require('./routes/vapiWebhook');
+const { startAbandonedPaymentCaller } = require('./jobs/abandonedPaymentCaller');
 
 const app = express();
 const server = http.createServer(app);
@@ -95,6 +100,14 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/cashfree', cashfreeRoutes);
+app.use('/api/user-auth', userAuthRoutes);
+app.use('/api/fantasy-team', fantasyTeamRoutes);
+try {
+  app.use('/api/vapi/llm', vapiLLMRoutes);
+  app.use('/api/vapi/webhook', vapiWebhookRoutes);
+} catch (err) {
+  console.error('Vapi routes failed to load (non-critical):', err.message);
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -111,6 +124,13 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+// Start abandoned payment caller cron job (isolated — errors here never affect main server)
+try {
+  startAbandonedPaymentCaller();
+} catch (err) {
+  console.error('Abandoned payment caller failed to start (non-critical):', err.message);
+}
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
