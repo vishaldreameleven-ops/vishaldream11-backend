@@ -51,7 +51,7 @@ Important rules:
     // Build Gemini conversation from messages (skip system message - we add our own)
     const userMessages = messages.filter(m => m.role !== 'system');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Convert OpenAI message format to Gemini format
     const history = [];
