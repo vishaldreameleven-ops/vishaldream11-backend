@@ -16,6 +16,7 @@ const userAuthRoutes = require('./routes/userAuth');
 const fantasyTeamRoutes = require('./routes/fantasyTeam');
 const vapiLLMRoutes = require('./routes/vapiLLM');
 const vapiWebhookRoutes = require('./routes/vapiWebhook');
+const { router: exotelRoutes } = require('./routes/exotel');
 const { startAbandonedPaymentCaller } = require('./jobs/abandonedPaymentCaller');
 
 const app = express();
@@ -105,8 +106,9 @@ app.use('/api/fantasy-team', fantasyTeamRoutes);
 try {
   app.use('/api/vapi/llm', vapiLLMRoutes);
   app.use('/api/vapi/webhook', vapiWebhookRoutes);
+  app.use('/api/exotel', exotelRoutes);
 } catch (err) {
-  console.error('Vapi routes failed to load (non-critical):', err.message);
+  console.error('Vapi/Exotel routes failed to load (non-critical):', err.message);
 }
 
 // Health check
