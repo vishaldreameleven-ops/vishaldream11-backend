@@ -14,6 +14,7 @@ const uploadRoutes = require('./routes/upload');
 const cashfreeRoutes = require('./routes/cashfree');
 const userAuthRoutes = require('./routes/userAuth');
 const fantasyTeamRoutes = require('./routes/fantasyTeam');
+const chatRoutes = require('./routes/chat');
 const vapiLLMRoutes = require('./routes/vapiLLM');
 const vapiWebhookRoutes = require('./routes/vapiWebhook');
 const { router: exotelRoutes } = require('./routes/exotel');
@@ -32,6 +33,8 @@ const io = new Server(server, {
       'https://1strankcome.com',
       'https://www.1strankcome.com',
       'https://vishaldream11.vercel.app',
+      /\.vercel\.app$/,
+      /\.onrender\.com$/
     ],
     methods: ['GET', 'POST'],
     credentials: true
@@ -103,6 +106,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/cashfree', cashfreeRoutes);
 app.use('/api/user-auth', userAuthRoutes);
 app.use('/api/fantasy-team', fantasyTeamRoutes);
+app.use('/api/chat', chatRoutes);
 try {
   app.use('/api/vapi/llm', vapiLLMRoutes);
   app.use('/api/vapi/webhook', vapiWebhookRoutes);
