@@ -59,6 +59,12 @@ const settingsSchema = new mongoose.Schema({
   timerDeadline: {
     type: Date,
     default: () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // Default: 2 days from now
+  },
+  // Telegram Bot for drop notifications
+  telegramBotSettings: {
+    botToken: { type: String, default: '' },
+    adminChatId: { type: String, default: '' },
+    enabled: { type: Boolean, default: false }
   }
 }, {
   timestamps: true

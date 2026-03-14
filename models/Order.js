@@ -100,6 +100,15 @@ const orderSchema = new mongoose.Schema({
   vapiCallId: {
     type: String,
     default: null
+  },
+  telegramNotifiedDrop: {
+    type: Boolean,
+    default: false
+  },
+  source: {
+    type: String,
+    enum: ['website', 'chatbot'],
+    default: 'website'
   }
 }, {
   timestamps: true

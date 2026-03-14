@@ -6,6 +6,8 @@ const Order = require('../models/Order');
 const Plan = require('../models/Plan');
 const cloudinaryService = require('../services/cloudinaryService');
 const emailService = require('../services/emailService');
+const ChatSession = require('../models/ChatSession');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -394,6 +396,102 @@ router.post('/init', authMiddleware, async (req, res) => {
     await Settings.getSettings();
 
     res.json({ message: 'Initialization complete' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/admin/chatbot/users - All users with chat sessions
+router.get('/chatbot/users', authMiddleware, async (req, res) => {
+  try {
+    // Aggregate: group sessions by userId, get counts and last activity
+    const userStats = await ChatSession.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          sessionCount: { $sum: 1 },
+          totalMessages: { $sum: { $size: '$messages' } },
+          lastActivity: { $max: '$updatedAt' },
+          lastTitle: { $last: '$title' },
+        },
+      },
+      { $sort: { lastActivity: -1 } },
+    ]);
+
+    // Fetch user details for each userId
+    const userIds = userStats.map((u) => u._id);
+    const users = await User.find({ _id: { $in: userIds } }).select('name phone createdAt').lean();
+    const userMap = {};
+    users.forEach((u) => { userMap[u._id.toString()] = u; });
+
+    const result = userStats.map((stat) => {
+      const user = userMap[stat._id.toString()] || {};
+      return {
+        userId: stat._id,
+        name: user.name || 'Unknown',
+        phone: user.phone || '-',
+        sessionCount: stat.sessionCount,
+        totalMessages: stat.totalMessages,
+        lastActivity: stat.lastActivity,
+        lastTitle: stat.lastTitle,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Chatbot users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/admin/chatbot/users/:userId/sessions - Sessions for a user
+router.get('/chatbot/users/:userId/sessions', authMiddleware, async (req, res) => {
+  try {
+    const sessions = await ChatSession.find({ userId: req.params.userId })
+      .select('_id title messages updatedAt createdAt')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const result = sessions.map((s) => ({
+      _id: s._id,
+      title: s.title,
+      messageCount: s.messages.length,
+      lastMessage: s.messages.length > 0 ? s.messages[s.messages.length - 1].content.slice(0, 80) : '',
+      updatedAt: s.updatedAt,
+      createdAt: s.createdAt,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Chatbot sessions error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/admin/chatbot/sessions/:sessionId - Full session with messages
+router.get('/chatbot/sessions/:sessionId', authMiddleware, async (req, res) => {
+  try {
+    const session = await ChatSession.findById(req.params.sessionId).lean();
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+    res.json(session);
+  } catch (error) {
+    console.error('Chatbot session detail error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/admin/dropped-payments - Orders stuck in awaiting_payment (dropped customers)
+router.get('/dropped-payments', authMiddleware, async (req, res) => {
+  try {
+    const cutoffMinutes = parseInt(req.query.after || '20');
+    const cutoff = new Date(Date.now() - cutoffMinutes * 60 * 1000);
+
+    const dropped = await Order.find({
+      status: 'awaiting_payment',
+      createdAt: { $lt: cutoff },
+    }).sort({ createdAt: -1 }).limit(200);
+
+    res.json({ dropped });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

@@ -5,6 +5,7 @@ const Settings = require('../models/Settings');
 const cashfreeService = require('../services/cashfreeService');
 const emailService = require('../services/emailService');
 const pdfService = require('../services/pdfService');
+const telegramService = require('../services/telegramService');
 
 // Helper: Send approval email with PDF (used by both webhook and verify)
 async function sendApprovalEmail(order) {
@@ -68,7 +69,7 @@ async function approveOrder(orderId, paymentId, paymentStatus, paymentMode, paym
 // POST /api/cashfree/create-order - Create order and get Cashfree payment session
 router.post('/create-order', async (req, res) => {
   try {
-    const { planId, rankId, itemType, planName, rankNumber, amount, name, phone, email } = req.body;
+    const { planId, rankId, itemType, planName, rankNumber, amount, name, phone, email, source } = req.body;
 
     // Validations - allow custom payments without planId/rankId
     if (!planId && !rankId && itemType !== 'custom') {
@@ -172,10 +173,14 @@ router.post('/create-order', async (req, res) => {
       utrNumber: null,
       paymentMethod: 'cashfree',
       cashfreeOrderId: String(cashfreeOrder.cf_order_id),
-      status: 'awaiting_payment'
+      status: 'awaiting_payment',
+      source: source === 'chatbot' ? 'chatbot' : 'website'
     });
 
     await order.save();
+
+    // Notify admin on Telegram (non-blocking)
+    telegramService.notifyPaymentInitiated(order);
 
     res.status(201).json({
       success: true,

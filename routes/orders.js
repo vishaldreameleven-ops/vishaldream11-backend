@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
     console.log('=== ORDER REQUEST ===');
     console.log('Raw body:', JSON.stringify(req.body));
 
-    const { planId, rankId, itemType, planName, amount, name, phone, email, utrNumber } = req.body;
+    const { planId, rankId, itemType, planName, amount, name, phone, email, utrNumber, source } = req.body;
 
     console.log('Parsed fields:', { planId, rankId, itemType, planName, amount, name, phone, utrNumber });
 
@@ -115,7 +115,8 @@ router.post('/', async (req, res) => {
       email: email ? email.trim() : '',
       utrNumber: utrNumber.trim().toUpperCase(),
       paymentMethod: 'upi_manual',
-      status: 'pending'
+      status: 'pending',
+      source: source === 'chatbot' ? 'chatbot' : 'website'
     });
 
     await order.save();
@@ -132,6 +133,7 @@ router.post('/', async (req, res) => {
         phone: order.phone,
         status: order.status,
         paymentMethod: order.paymentMethod,
+        source: order.source,
         createdAt: order.createdAt
       });
       console.log('Socket event emitted: new-order', order.orderId);

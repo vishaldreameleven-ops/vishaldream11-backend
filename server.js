@@ -19,6 +19,7 @@ const vapiLLMRoutes = require('./routes/vapiLLM');
 const vapiWebhookRoutes = require('./routes/vapiWebhook');
 const { router: exotelRoutes } = require('./routes/exotel');
 const { startAbandonedPaymentCaller } = require('./jobs/abandonedPaymentCaller');
+const { startDropNotifier } = require('./jobs/dropNotifier');
 
 const app = express();
 const server = http.createServer(app);
@@ -136,6 +137,13 @@ try {
   startAbandonedPaymentCaller();
 } catch (err) {
   console.error('Abandoned payment caller failed to start (non-critical):', err.message);
+}
+
+// Start drop notifier (Telegram alerts for dropped payments)
+try {
+  startDropNotifier();
+} catch (err) {
+  console.error('Drop notifier failed to start (non-critical):', err.message);
 }
 
 server.listen(PORT, () => {

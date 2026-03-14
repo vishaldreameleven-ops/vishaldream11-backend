@@ -32,6 +32,11 @@ const fantasyTeamSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    rankNumber: {
+      type: Number,
+      enum: [1, 2, 3],
+      default: null,
+    },
   },
   { timestamps: true }
 );
